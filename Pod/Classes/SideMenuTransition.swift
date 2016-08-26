@@ -15,7 +15,6 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
     private var interactive = false
     private static weak var originalSuperview: UIView?
     private static var switchMenus = false
-    private static var transitionStarted = false
     
     internal static let singleton = SideMenuTransition()
     internal static var presentDirection: UIRectEdge = .Left;
@@ -123,31 +122,28 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
     }
     
     class func handleHideMenuPan(pan: UIPanGestureRecognizer) {
-        if !self.transitionStarted {
-            let translation = pan.translationInView(pan.view!)
-            let direction:CGFloat = SideMenuTransition.presentDirection == .Left ? -1 : 1
-            let distance = translation.x / SideMenuManager.menuWidth * direction
+        let translation = pan.translationInView(pan.view!)
+        let direction:CGFloat = SideMenuTransition.presentDirection == .Left ? -1 : 1
+        let distance = translation.x / SideMenuManager.menuWidth * direction
+        
+        switch (pan.state) {
             
-            switch (pan.state) {
-                
-            case .Began:
-                self.transitionStarted = true
-                singleton.interactive = true
-                viewControllerForPresentedMenu?.dismissViewControllerAnimated(true, completion: nil)
-            case .Changed:
-                singleton.updateInteractiveTransition(max(min(distance, 1), 0))
-            default:
-                singleton.interactive = false
-                let velocity = pan.velocityInView(pan.view!).x * direction
-                if velocity >= 100 || velocity >= -50 && distance >= 0.5 {
-                    // bug workaround: animation briefly resets after call to finishInteractiveTransition() but before animateTransition completion is called.
-                    if NSProcessInfo().operatingSystemVersion.majorVersion == 8 && singleton.percentComplete > 1 - CGFloat(FLT_EPSILON) {
-                        singleton.updateInteractiveTransition(0.9999)
-                    }
-                    singleton.finishInteractiveTransition()
-                } else {
-                    singleton.cancelInteractiveTransition()
+        case .Began:
+            singleton.interactive = true
+            viewControllerForPresentedMenu?.dismissViewControllerAnimated(true, completion: nil)
+        case .Changed:
+            singleton.updateInteractiveTransition(max(min(distance, 1), 0))
+        default:
+            singleton.interactive = false
+            let velocity = pan.velocityInView(pan.view!).x * direction
+            if velocity >= 100 || velocity >= -50 && distance >= 0.5 {
+                // bug workaround: animation briefly resets after call to finishInteractiveTransition() but before animateTransition completion is called.
+                if NSProcessInfo().operatingSystemVersion.majorVersion == 8 && singleton.percentComplete > 1 - CGFloat(FLT_EPSILON) {
+                    singleton.updateInteractiveTransition(0.9999)
                 }
+                singleton.finishInteractiveTransition()
+            } else {
+                singleton.cancelInteractiveTransition()
             }
         }
     }
@@ -210,7 +206,6 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
             topNavigationController.interactivePopGestureRecognizer!.enabled = true
         }
         originalSuperview?.addSubview(mainViewController.view)
-        self.transitionStarted = false
     }
     
     internal class func presentMenuStart(forSize size: CGSize = SideMenuManager.appScreenRect.size) {
@@ -322,7 +317,6 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
             tapView.addGestureRecognizer(exitPanGesture)
             tapView.addGestureRecognizer(exitTapGesture)
             SideMenuTransition.tapView = tapView
-            
             SideMenuTransition.originalSuperview = topView.superview
             
             // add the both views to our view controller
@@ -361,7 +355,9 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
             } else {
                 SideMenuTransition.hideMenuStart()
             }
+            SideMenuTransition.tapView.userInteractionEnabled = false
             menuView.userInteractionEnabled = false
+            
             }) { (finished) -> Void in
                 // tell our transitionContext object that we've finished animating
                 if transitionContext.transitionWasCancelled() {
@@ -372,6 +368,7 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
                     } else {
                         SideMenuTransition.presentMenuComplete()
                     }
+                    SideMenuTransition.tapView.userInteractionEnabled = true
                     menuView.userInteractionEnabled = true
                     
                     transitionContext.completeTransition(false)
