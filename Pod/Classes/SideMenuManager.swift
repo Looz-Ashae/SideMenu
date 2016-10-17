@@ -87,7 +87,7 @@ public class SideMenuManager {
     /// Draws the `menuAnimationBackgroundColor` behind the status bar. Default is true.
     public static var menuFadeStatusBar = true
 
-    /// Makes presenting ViewController pop once from the NavigationController stack after presenting SideMenu. Default to false.
+    /// Makes presenting ViewController pop once from the NavigationController stack after presenting SideMenu. Also shows the navigation bar. Default to false.
     public static var forcePresentingViewControllerToPop = false
     
     /// - Warning: Deprecated. Use `menuAnimationTransformScaleFactor` instead.
