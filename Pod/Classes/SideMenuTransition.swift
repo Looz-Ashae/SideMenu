@@ -283,7 +283,7 @@ internal class SideMenuTransition: UIPercentDrivenInteractiveTransition, UIViewC
             topNavigationController.interactivePopGestureRecognizer!.enabled = false
             if SideMenuManager.forcePresentingViewControllerToPop {
                 SideMenuManager.forcePresentingViewControllerToPop = false
-                topNavigationController.popViewControllerAnimated(true)
+                topNavigationController.popToRootViewControllerAnimated(true)
                 topNavigationController.navigationBarHidden = false
             }
         }
